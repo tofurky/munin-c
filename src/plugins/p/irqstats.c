@@ -58,7 +58,7 @@ bool isempty(char *string)
 
 bool endswith(char *haystack, char *needle)
 {
-	size_t haystack_length = 0, needle_length = 0;
+	size_t haystack_length, needle_length;
 
 	if (!haystack || !needle)
 		return false;
@@ -77,7 +77,7 @@ size_t read_interrupts(irqstat_t irqstats[], bool config)
 	FILE *interrupts;
 	char line_buf[MAX_LINE] = {0};
 	size_t irq_num = 0, cpu_num = 0, line_num = 0;
-	unsigned long hwirq = 0;
+	unsigned long hwirq;
 
 	interrupts = fopen(INTERRUPTS, "r");
 	if (!interrupts) {
