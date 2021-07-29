@@ -302,18 +302,6 @@ next_line:
 	return irq_num;
 }
 
-bool irqstats_autoconf()
-{
-	if (!access(PROC_INTERRUPTS, R_OK)) {
-		printf("yes\n");
-		return false;
-	}
-	else {
-		printf("no (%s isn't readable: %m)\n", PROC_INTERRUPTS);
-		return true;
-	}
-}
-
 bool irqstats_config() {
 	irqstat_t irqs[MAX_IRQS] = {0};
 	size_t irq_num = read_interrupts(irqs, true);
