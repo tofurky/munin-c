@@ -15,7 +15,7 @@
 #include "common.h"
 #include "plugins.h"
 
-#define INTERRUPTS "/proc/interrupts"
+#define PROC_INTERRUPTS "/proc/interrupts"
 /* Stop processing after this many IRQs have been seen */
 #define MAX_IRQS 256
 /* Sufficient even on a system with 256 threads */
@@ -79,7 +79,7 @@ size_t read_interrupts(irqstat_t irqs[], bool config)
 	size_t irq_num = 0, cpu_num = 0, line_num = 0;
 	unsigned long hwirq;
 
-	interrupts = fopen(INTERRUPTS, "r");
+	interrupts = fopen(PROC_INTERRUPTS, "r");
 	if (!interrupts) {
 		fprintf(stderr, "fopen: %m\n");
 		return 0;
@@ -219,43 +219,61 @@ size_t read_interrupts(irqstat_t irqs[], bool config)
 		/* SPARC's interrupts layout differs */
 		if (token_num >= 2) {
 			token_start = 2;
-			/* SPARC has been seen to have many duplicate 'MSIQ' interrupts (one per thread), so always show the IRQ number here to differentiate */
+			/* TODO: 32-bit SPARC
+			 * SPARC has been seen to have many duplicate 'MSIQ' interrupts (one per thread), so always show the IRQ number here to differentiate */
 			if (!strcmp(tokens[2], "MSIQ")) {
 				irqs[irq_num].hwirq = strtoul(irqs[irq_num].name, NULL, 10);
 				irqs[irq_num].has_hwirq = true;
 			}
+		}
 #else
 		/* Newer ARM, MIPS, some x86, etc. */
 		if (token_num >= 2 && isnumeric(tokens[1])) {
 			token_start = 2;
 
-			/*                                                   [0]        [1][2]       [3-] */
-			/* 38:     150262          0          0          0   OpenPIC    38 Level     i2c-mpc, i2c-mpc */
-			/* Interrupt 38, for device(s): i2c-mpc, i2c-mpc */
-			/* */
-			/*                     [0]   [1] [2-] */
-			/*  3:  247552271      MIPS   3  ehci_hcd:usb1 */
-			/* Interrupt 3, for device(s): ehci_hcd:usb1 */
-			/* */
-			/*                 [0]            [1][2]       [3-] */
-			/* 33:     617373  f1010140.gpio  17 Edge      pps.-1 */
-			/* Interrupt 33, for device(s): pps.-1 [17] */
-
+			/* PowerPC:
+			 *                                                   [0]        [1][2]       [3-]
+			 * 38:     150262          0          0          0   OpenPIC    38 Level     i2c-mpc, i2c-mpc
+			 * Interrupt 38, for device(s): i2c-mpc, i2c-mpc
+			 *
+			 * ARM:
+			 *                 [0]            [1][2]       [3-]
+			 * 33:     617373  f1010140.gpio  17 Edge      pps.-1
+			 * Interrupt 33, for device(s): pps.-1 [17]
+			 */
 			if ((hwirq = strtoul(tokens[1], NULL, 10)) != strtoul(irqs[irq_num].name, NULL, 10)) {
 				irqs[irq_num].hwirq = hwirq;
 				irqs[irq_num].has_hwirq = true;
 			}
 
-			/* MIPS has been seen to not show the type */
+			/* MIPS has been seen to not show the type
+			 *
+			 * MIPS:
+			 *                     [0]   [1] [2-]
+			 * 10:        122      MISC   3  ttyS0
+			 * Interrupt 10, for device(s): ttyS0 [3]
+			 */
 			if (!strcmp(tokens[2], "Edge") || !strcmp(tokens[2], "Level") || !strcmp(tokens[2], "None"))
 				token_start = 3;
-#endif
 		}
-		/* Most x86 interrupts, old ARM */
+#endif
+		/* Most x86 interrupts, old ARM
+		 *
+		 * ARM:
+		 *                   [0]       [1-]
+		 * 64:         21    MXC_GPIO  baby_buttons
+		 * Interrupt 64, for device(s): baby_buttons
+		 */
 		else {
 			token_start = 1;
 
-			/* Strip away the text component from x86 APIC/PCI interrupts e.g. 18-fasteoi or 1048579-edge */
+			/* Strip away the text component from x86 APIC/PCI interrupts e.g. 18-fasteoi or 1048579-edge
+			 *
+			 * x86:
+			 *                                                   [0]     [1]              [2-]
+			 * 30:          0   21780097          0          0   PCI-MSI 512000-edge      ahci[0000:00:1f.2]
+			 * Interrupt 30, for device(s): ahci[0000:00:1f.2] [512000]
+			 */
 			if (isdigit(*tokens[1]) && (endswith(tokens[1], "-fasteoi") || endswith(tokens[1], "-edge"))) {
 				token_start = 2;
 
@@ -286,12 +304,12 @@ next_line:
 
 bool irqstats_autoconf()
 {
-	if (!access(INTERRUPTS, R_OK)) {
+	if (!access(PROC_INTERRUPTS, R_OK)) {
 		printf("yes\n");
 		return false;
 	}
 	else {
-		printf("no (%s isn't readable: %m)\n", INTERRUPTS);
+		printf("no (%s isn't readable: %m)\n", PROC_INTERRUPTS);
 		return true;
 	}
 }
@@ -377,7 +395,7 @@ int irqstats(int argc, char **argv)
 	}
 	else if (argc == 2) {
 		if (!strcmp(argv[1], "autoconf")) {
-			return !irqstats_autoconf();
+			return autoconf_check_readable(PROC_INTERRUPTS);
 		}
 		else if (!strcmp(argv[1], "config")) {
 			return !irqstats_config();
