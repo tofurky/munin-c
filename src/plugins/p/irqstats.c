@@ -11,9 +11,9 @@
 #include <stdbool.h>
 #include <stdlib.h>
 #include <unistd.h>
-#include <signal.h>
-#include <errno.h>
 #include <ctype.h>
+#include "common.h"
+#include "plugins.h"
 
 #define INTERRUPTS "/proc/interrupts"
 /* Stop processing after this many IRQs have been seen */
