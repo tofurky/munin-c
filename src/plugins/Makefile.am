@@ -25,6 +25,7 @@ munin_plugins_c_SOURCES = \
 	p/if_err_.c \
 	p/interrupts.c \
 	p/iostat.c \
+	p/irqstats.c \
 	p/load.c \
 	p/open_files.c \
 	p/open_inodes.c \
