@@ -37,7 +37,7 @@ bool isnumeric(char *string)
 
 	/* Check that every character is a digit */
 	while (*string)
-		if (!isdigit(*string++))
+		if (!xisdigit(*string++))
 			return false;
 
 	return true;
@@ -50,7 +50,7 @@ bool isempty(char *string)
 
 	/* Check that it's not all whitespace */
 	while (*string)
-		if (!isspace(*string++))
+		if (!xisspace(*string++))
 			return false;
 
 	return true;
@@ -193,10 +193,10 @@ size_t read_interrupts(irqstat_t irqs[], bool config)
 			goto next_line;
 
 		/* Skip over leading whitespace. We know there's something there, per isempty() above */
-		for (; *pos && isblank(*pos); pos++);
+		for (; *pos && xisblank(*pos); pos++);
 
 		/* NULL out any trailing whitespace */
-		for (char *eos = pos + strlen(pos) - 1; *eos && isspace(*eos); *eos-- = '\0');
+		for (char *eos = pos + strlen(pos) - 1; *eos && xisspace(*eos); *eos-- = '\0');
 
 		/* It won't be any longer than this */
 		irqs[irq_num].description = malloc(strlen(pos) + 1);
@@ -282,7 +282,7 @@ size_t read_interrupts(irqstat_t irqs[], bool config)
 			 * 30:          0   21780097          0          0   PCI-MSI 512000-edge      ahci[0000:00:1f.2]
 			 * Interrupt 30, for device(s): ahci[0000:00:1f.2] [512000]
 			 */
-			if (isdigit(*tokens[1]) && (endswith(tokens[1], "-fasteoi") || endswith(tokens[1], "-edge"))) {
+			if (xisdigit(*tokens[1]) && (endswith(tokens[1], "-fasteoi") || endswith(tokens[1], "-edge"))) {
 				token_start = 2;
 
 				if ((hwirq = strtoul(tokens[1], NULL, 10)) != strtoul(irqs[irq_num].name, NULL, 10)) {

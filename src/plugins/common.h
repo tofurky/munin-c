@@ -39,6 +39,7 @@ void print_warncrit(const char *name);
  * @returns a failure state to be passed on as the return value from main */
 int fail(const char *message);
 
+#define xisblank(x) isblank((int)(unsigned char) x)
 #define xisspace(x) isspace((int)(unsigned char) x)
 #define xisdigit(x) isdigit((int)(unsigned char) x)
 
