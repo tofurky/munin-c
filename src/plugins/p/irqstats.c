@@ -179,7 +179,7 @@ size_t read_interrupts(irqstat_t irqs[], bool config)
 				break;
 			}
 
-			irqs[irq_num].count += strtol(pos, NULL, 10);
+			irqs[irq_num].count += strtoul(pos, NULL, 10);
 		}
 
 		/* Skip over the description parsing unless we're running 'config' */
