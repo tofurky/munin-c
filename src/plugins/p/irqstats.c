@@ -77,7 +77,6 @@ size_t read_interrupts(irqstat_t irqs[], bool config)
 	FILE *interrupts;
 	char line_buf[MAX_LINE] = {0};
 	size_t irq_num = 0, cpu_num = 0, line_num = 0;
-	unsigned long hwirq;
 
 	interrupts = fopen(PROC_INTERRUPTS, "r");
 	if (!interrupts) {
@@ -86,9 +85,9 @@ size_t read_interrupts(irqstat_t irqs[], bool config)
 	}
 
 	while (fgets(line_buf, sizeof(line_buf), interrupts)) {
-		char *pos = NULL, *eol = NULL;
-		char *tokens[MAX_TOKENS] = {0};
-		size_t token_num = 0, token_start = 0;
+		char *pos, *eol;
+		char *tokens[MAX_TOKENS];
+		size_t token_num = 0, token_start;
 
 		if (irq_num == MAX_IRQS)
 			break;
@@ -227,6 +226,7 @@ size_t read_interrupts(irqstat_t irqs[], bool config)
 		/* SPARC's interrupts layout differs */
 		if (token_num >= 2) {
 			token_start = 2;
+
 			/* TODO: 32-bit SPARC
 			 * SPARC has been seen to have many duplicate 'MSIQ' interrupts (one per thread), so always show the IRQ number here to differentiate */
 			if (!strcmp(tokens[2], "MSIQ")) {
@@ -249,10 +249,8 @@ size_t read_interrupts(irqstat_t irqs[], bool config)
 			 * 33:     617373  f1010140.gpio  17 Edge      pps.-1
 			 * Interrupt 33, for device(s): pps.-1 [17]
 			 */
-			if ((hwirq = strtoul(tokens[1], NULL, 10)) != strtoul(irqs[irq_num].name, NULL, 10)) {
-				irqs[irq_num].hwirq = hwirq;
+			if ((irqs[irq_num].hwirq = strtoul(tokens[1], NULL, 10)) != strtoul(irqs[irq_num].name, NULL, 10))
 				irqs[irq_num].has_hwirq = true;
-			}
 
 			/* MIPS has been seen to not show the type
 			 *
@@ -285,10 +283,8 @@ size_t read_interrupts(irqstat_t irqs[], bool config)
 			if (xisdigit(*tokens[1]) && (endswith(tokens[1], "-fasteoi") || endswith(tokens[1], "-edge"))) {
 				token_start = 2;
 
-				if ((hwirq = strtoul(tokens[1], NULL, 10)) != strtoul(irqs[irq_num].name, NULL, 10)) {
-					irqs[irq_num].hwirq = hwirq;
+				if ((irqs[irq_num].hwirq = strtoul(tokens[1], NULL, 10)) != strtoul(irqs[irq_num].name, NULL, 10))
 					irqs[irq_num].has_hwirq = true;
-				}
 			}
 		}
 
