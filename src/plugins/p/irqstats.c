@@ -164,10 +164,17 @@ size_t read_interrupts(irqstat_t irqs[], bool config)
 
 			/* If it's not a positive integer, we may have run into the description unexpectedly */
 			if (!isnumeric(pos)) {
+				char *eos;
+
 				if (!c) {
 					fprintf(stderr, "irq '%s' has garbage '%s'\n", irqs[irq_num].name, pos);
 					return 0;
 				}
+
+				/* Backtrack */
+				if ((eos = pos + strlen(pos)) < eol)
+					*eos = ' ';
+				while (*--pos);
 
 				break;
 			}
