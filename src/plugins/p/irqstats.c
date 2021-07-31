@@ -96,9 +96,8 @@ size_t read_interrupts(irqstat_t irqs[], bool config)
 		/* Ensure EOL is '\n' */
 		if ((eol = strchr(line_buf, '\n')) != NULL) {
 			*eol = '\0';
-		}
 		/* Otherwise we've overrun line_buf (or the last line doesn't have a newline - unlikely) */
-		else {
+		} else {
 			fprintf(stderr, "line %zu had overflow\n", line_num);
 			return 0;
 		}
@@ -334,15 +333,12 @@ bool irqstats_config() {
 			if (irqs[i].has_hwirq)
 				printf(" [%lu]", irqs[i].hwirq);
 			printf("\n");
-		}
 		/* NOTE: The original Perl plugin does a case insensitive substring match. '#define _GNU_SOURCE' and strcasestr() could imitate this. */
-		else if (!strcmp(irqs[i].name, "NMI")) {
+		} else if (!strcmp(irqs[i].name, "NMI")) {
 			printf("iNMI.info Non-maskable interrupt. Either 0 or quite high. If it's normally 0 then just one NMI will often mark some hardware failure.\n");
-		}
-		else if (!strcmp(irqs[i].name, "LOC")) {
+		} else if (!strcmp(irqs[i].name, "LOC")) {
 			printf("iLOC.info Local (per CPU core) APIC timer interrupt. Until 2.6.21 normally 250 or 1000 per second. On modern 'tickless' kernels it more or less reflects how busy the machine is.\n");
-		}
-		else {
+		} else {
 			/* Don't show any info line */
 		}
 
@@ -380,23 +376,18 @@ int irqstats(int argc, char **argv)
 {
 	if (argc == 1) {
 		/* fetch (fall through) */
-	}
-	else if (argc == 2) {
+	} else if (argc == 2) {
 		if (!strcmp(argv[1], "autoconf")) {
 			return autoconf_check_readable(PROC_INTERRUPTS);
-		}
-		else if (!strcmp(argv[1], "config")) {
+		} else if (!strcmp(argv[1], "config")) {
 			return !irqstats_config();
-		}
-		else if (!strcmp(argv[1], "fetch")) {
+		} else if (!strcmp(argv[1], "fetch")) {
 			/* fetch (fall through) */
-		}
-		else {
+		} else {
 			fprintf(stderr, "invalid mode '%s'\n", argv[1]);
 			return 1;
 		}
-	}
-	else {
+	} else {
 		fprintf(stderr, "invalid parameters\n");
 		return 1;
 	}
