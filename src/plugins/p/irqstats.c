@@ -81,7 +81,7 @@ size_t read_interrupts(irqstat_t irqs[], bool config)
 
 	interrupts = fopen(PROC_INTERRUPTS, "r");
 	if (!interrupts) {
-		fprintf(stderr, "fopen: %m\n");
+		perror("fopen");
 		return 0;
 	}
 
@@ -99,14 +99,14 @@ size_t read_interrupts(irqstat_t irqs[], bool config)
 		}
 		/* Otherwise we've overrun line_buf (or the last line doesn't have a newline - unlikely) */
 		else {
-			fprintf(stderr, "line_num=%zu had line_buf overflow\n", line_num);
+			fprintf(stderr, "line %zu had overflow\n", line_num);
 			return 0;
 		}
 
 		pos = strtok(line_buf, " ");
 		/* There should be no empty lines */
 		if (!pos) {
-			fprintf(stderr, "line_num=%zu is empty\n", line_num);
+			fprintf(stderr, "line %zu is empty\n", line_num);
 			return 0;
 		}
 
@@ -114,7 +114,7 @@ size_t read_interrupts(irqstat_t irqs[], bool config)
 		if (line_num == 0) {
 			while (pos) {
 				if (strncmp(pos, "CPU", 3)) {
-					fprintf(stderr, "expected CPU at line_num=%zu, got '%s'\n", line_num, pos);
+					fprintf(stderr, "expected CPU at line 0, got '%s'\n", pos);
 					return 0;
 				}
 
@@ -124,7 +124,7 @@ size_t read_interrupts(irqstat_t irqs[], bool config)
 			}
 
 			if (!cpu_num) {
-				fprintf(stderr, "no CPUs found\n");
+				fputs("no CPUs found\n", stderr);
 				return 0;
 			}
 
@@ -136,14 +136,14 @@ size_t read_interrupts(irqstat_t irqs[], bool config)
 
 		/* The rest of the lines should each contain an interrupt name, value(s), and optional description */
 		if (!strchr(pos, ':')) {
-			fprintf(stderr, "expected name '%s' is missing ':'\n", pos);
+			fprintf(stderr, "irq '%s' is missing ':'\n", pos);
 			return 0;
 		}
 
 		length = strlen(pos);
 		irqs[irq_num].name = malloc(length); /* We're discarding the ':' */
 		if (!irqs[irq_num].name) {
-			fprintf(stderr, "malloc: %m\n");
+			perror("malloc");
 			return 0;
 		}
 
@@ -156,7 +156,7 @@ size_t read_interrupts(irqstat_t irqs[], bool config)
 			/* Some interrupts, such as 'ERR' or 'MIS' will only have a single counter rather than one per CPU */
 			if (!pos) {
 				if (!c) {
-					fprintf(stderr, "irqs[%zu].name = '%s' has no counters\n", irq_num, irqs[irq_num].name);
+					fprintf(stderr, "irq '%s' has no counters\n", irqs[irq_num].name);
 					return 0;
 				}
 
@@ -166,7 +166,7 @@ size_t read_interrupts(irqstat_t irqs[], bool config)
 			/* If it's not a positive integer, we may have run into the description unexpectedly */
 			if (!isnumeric(pos)) {
 				if (!c) {
-					fprintf(stderr, "irqs[%zu].name = '%s' has only garbage '%s'\n", irq_num, irqs[irq_num].name, pos);
+					fprintf(stderr, "irq '%s' has garbage '%s'\n", irqs[irq_num].name, pos);
 					return 0;
 				}
 
@@ -193,7 +193,7 @@ size_t read_interrupts(irqstat_t irqs[], bool config)
 		/* It won't be any longer than this */
 		irqs[irq_num].description = malloc(strlen(pos) + 1);
 		if (!irqs[irq_num].description) {
-			fprintf(stderr, "malloc: %m\n");
+			perror("malloc");
 			return 0;
 		}
 		*irqs[irq_num].description = '\0';
@@ -307,7 +307,7 @@ bool irqstats_config() {
 	size_t irq_num = read_interrupts(irqs, true);
 
 	if (irq_num == 0) {
-		fprintf(stderr, "no interrupts found\n");
+		fputs("no irqs found\n", stderr);
 		return false;
 	}
 
@@ -362,7 +362,7 @@ bool irqstats_fetch()
 	size_t irq_num = read_interrupts(irqs, false);
 
 	if (irq_num == 0) {
-		fprintf(stderr, "no interrupts found\n");
+		fputs("no irqs found\n", stderr);
 		return false;
 	}
 
@@ -397,7 +397,7 @@ int irqstats(int argc, char **argv)
 		}
 	}
 	else {
-		fprintf(stderr, "invalid parameters\n");
+		fputs("invalid parameters\n", stderr);
 		return 1;
 	}
 
