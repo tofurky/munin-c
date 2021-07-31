@@ -88,7 +88,7 @@ size_t read_interrupts(irqstat_t irqs[], bool config)
 	while (fgets(line_buf, sizeof(line_buf), interrupts)) {
 		char *pos = NULL, *eol = NULL;
 		char *tokens[MAX_TOKENS] = {0};
-		size_t length = 0, token_num = 0, token_start = 0;
+		size_t token_num = 0, token_start = 0;
 
 		if (irq_num == MAX_IRQS)
 			break;
@@ -139,15 +139,17 @@ size_t read_interrupts(irqstat_t irqs[], bool config)
 			return 0;
 		}
 
-		length = strlen(pos);
-		irqs[irq_num].name = malloc(length); /* We're discarding the ':' */
-		if (!irqs[irq_num].name) {
-			perror("malloc");
-			return 0;
-		}
+		{
+			size_t length = strlen(pos);
+			irqs[irq_num].name = malloc(length); /* We're discarding the ':' */
+			if (!irqs[irq_num].name) {
+				perror("malloc");
+				return 0;
+			}
 
-		strncpy(irqs[irq_num].name, pos, --length); /* Discard ':' */
-		irqs[irq_num].name[length] = '\0';
+			strncpy(irqs[irq_num].name, pos, --length); /* Discard ':' */
+			irqs[irq_num].name[length] = '\0';
+		}
 
 		/* Convert each counter value to long and add it to the total for this IRQ */
 		for (size_t c = 0; c <= cpu_num; c++) {
