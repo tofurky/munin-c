@@ -124,7 +124,7 @@ size_t read_interrupts(irqstat_t irqs[], bool config)
 			}
 
 			if (!cpu_num) {
-				fputs("no CPUs found\n", stderr);
+				fprintf(stderr, "no CPUs found\n");
 				return 0;
 			}
 
@@ -307,7 +307,7 @@ bool irqstats_config() {
 	size_t irq_num = read_interrupts(irqs, true);
 
 	if (irq_num == 0) {
-		fputs("no irqs found\n", stderr);
+		fprintf(stderr, "no irqs found\n");
 		return false;
 	}
 
@@ -362,7 +362,7 @@ bool irqstats_fetch()
 	size_t irq_num = read_interrupts(irqs, false);
 
 	if (irq_num == 0) {
-		fputs("no irqs found\n", stderr);
+		fprintf(stderr, "no irqs found\n");
 		return false;
 	}
 
@@ -397,7 +397,7 @@ int irqstats(int argc, char **argv)
 		}
 	}
 	else {
-		fputs("invalid parameters\n", stderr);
+		fprintf(stderr, "invalid parameters\n");
 		return 1;
 	}
 
