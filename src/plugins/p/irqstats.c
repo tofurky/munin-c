@@ -201,7 +201,6 @@ size_t read_interrupts(irqstat_t irqs[], bool config)
 			perror("malloc");
 			return 0;
 		}
-		*irq->description = '\0';
 
 		/* If it's not a numbered IRQ, then the description is simply everything that remains */
 		if (!isnumeric(irq->name)) {
