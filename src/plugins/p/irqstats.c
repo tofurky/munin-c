@@ -219,17 +219,36 @@ size_t read_interrupts(irqstat_t irqs[], bool config)
 			goto next_line;
 		}
 
-#ifdef __sparc__
-		/* SPARC's interrupts layout differs */
-		if (token_num >= 2) {
-			token_start = 2;
+#if defined(__sparc__)
+		/* SPARC's interrupts layout differs
+		 *
+		 * sun4u:
+		 *                    [0]      [1]        [2-]
+		 *  1:          0     sun4u    -IVEC      SCHIZO_PCIERR
+		 * Interrupt 1, for device(s): SCHIZO_PCIERR [1]
+		 *
+		 * sun4v:
+		 *                    [0]      [1]
+		 * 42:          0     sun4v    MSIQ
+		 * Interrupt 42, for device(s): MSIQ [42]
+		 *
+		 * vsun4v:
+		 *                              [0]        [1]        [2-]
+		 * 16:          0          0    vsun4v     -IVEC      MSIQ
+		 * Interrupt 16, for device(s): MSIQ [16]
+		 *
+		 * TODO: sun4[cdm]
+		 */
+		token_start = (token_num >= 2 && *tokens[1] == '-') ? 2 : 1;
 
-			/* TODO: 32-bit SPARC
-			 * SPARC has been seen to have many duplicate 'MSIQ' interrupts (one per thread), so always show the IRQ number here to differentiate */
-			if (!strcmp(tokens[2], "MSIQ")) {
-				irq->hwirq = strtoul(irq->name, NULL, 10);
-				irq->has_hwirq = true;
-			}
+		/* (v)sun4v has been seen to have many duplicate 'MSIQ' interrupts (one per thread), so always show the IRQ number here to differentiate
+		 * Additionally, there are ambiguous descriptions beginning with 'SCHIZO_' and 'PSYCHO_' on older (i.e. sun4u) machines
+		 */
+		if (!strcmp(tokens[token_start], "MSIQ") ||
+			!strncmp(tokens[token_start], "SCHIZO_", sizeof("SCHIZO_") - 1) ||
+			!strncmp(tokens[token_start], "PSYCHO_", sizeof("PSYCHO_") - 1)) {
+			irq->hwirq = strtoul(irq->name, NULL, 10);
+			irq->has_hwirq = true;
 		}
 #else
 		/* Newer ARM, MIPS, some x86, etc. */
@@ -258,8 +277,7 @@ size_t read_interrupts(irqstat_t irqs[], bool config)
 			 */
 			if (!strcmp(tokens[2], "Edge") || !strcmp(tokens[2], "Level") || !strcmp(tokens[2], "None"))
 				token_start = 3;
-		}
-#endif
+
 		/* Most x86 interrupts, old ARM
 		 *
 		 * ARM:
@@ -267,9 +285,10 @@ size_t read_interrupts(irqstat_t irqs[], bool config)
 		 * 64:         21    MXC_GPIO  baby_buttons
 		 * Interrupt 64, for device(s): baby_buttons
 		 */
-		else {
+		} else {
 			token_start = 1;
 
+# if defined(__x86_64__) || defined(__i386__)
 			/* Strip away the text component from x86 APIC/PCI interrupts e.g. 18-fasteoi or 1048579-edge
 			 *
 			 * x86:
@@ -283,7 +302,9 @@ size_t read_interrupts(irqstat_t irqs[], bool config)
 				if ((irq->hwirq = strtoul(tokens[1], NULL, 10)) != strtoul(irq->name, NULL, 10))
 					irq->has_hwirq = true;
 			}
+# endif
 		}
+#endif
 
 		/* Concatenate the needed tokens with a space */
 		for (*irq->description = '\0'; token_start <= token_num; token_start++) {
