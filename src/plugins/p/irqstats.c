@@ -88,9 +88,7 @@ size_t read_interrupts(irqstat_t irqs[], bool config)
 		char *pos, *eol;
 		char *tokens[MAX_TOKENS];
 		size_t token_num = 0, token_start;
-
-		if (irq_num == MAX_IRQS)
-			break;
+		irqstat_t *irq = &irqs[irq_num];
 
 		/* Ensure EOL is '\n' */
 		if ((eol = strchr(line_buf, '\n')) != NULL) {
@@ -140,14 +138,14 @@ size_t read_interrupts(irqstat_t irqs[], bool config)
 
 		{
 			size_t length = strlen(pos);
-			irqs[irq_num].name = malloc(length); /* We're discarding the ':' */
-			if (!irqs[irq_num].name) {
+			irq->name = malloc(length); /* We're discarding the ':' */
+			if (!irq->name) {
 				perror("malloc");
 				return 0;
 			}
 
-			strncpy(irqs[irq_num].name, pos, --length); /* Discard ':' */
-			irqs[irq_num].name[length] = '\0';
+			strncpy(irq->name, pos, --length); /* Discard ':' */
+			irq->name[length] = '\0';
 		}
 
 		/* Convert each counter value to long and add it to the total for this IRQ */
@@ -156,7 +154,7 @@ size_t read_interrupts(irqstat_t irqs[], bool config)
 			/* Some interrupts, such as 'ERR' or 'MIS' will only have a single counter rather than one per CPU */
 			if (!pos) {
 				if (!c) {
-					fprintf(stderr, "irq '%s' has no counters\n", irqs[irq_num].name);
+					fprintf(stderr, "irq '%s' has no counters\n", irq->name);
 					return 0;
 				}
 
@@ -168,7 +166,7 @@ size_t read_interrupts(irqstat_t irqs[], bool config)
 				char *eos;
 
 				if (!c) {
-					fprintf(stderr, "irq '%s' has garbage '%s'\n", irqs[irq_num].name, pos);
+					fprintf(stderr, "irq '%s' has garbage '%s'\n", irq->name, pos);
 					return 0;
 				}
 
@@ -180,7 +178,7 @@ size_t read_interrupts(irqstat_t irqs[], bool config)
 				break;
 			}
 
-			irqs[irq_num].count += strtoul(pos, NULL, 10);
+			irq->count += strtoul(pos, NULL, 10);
 		}
 
 		/* Skip over the description parsing unless we're running 'config' */
@@ -198,16 +196,16 @@ size_t read_interrupts(irqstat_t irqs[], bool config)
 		for (char *eos = pos + strlen(pos) - 1; *eos && xisspace(*eos); *eos-- = '\0');
 
 		/* It won't be any longer than this */
-		irqs[irq_num].description = malloc(strlen(pos) + 1);
-		if (!irqs[irq_num].description) {
+		irq->description = malloc(strlen(pos) + 1);
+		if (!irq->description) {
 			perror("malloc");
 			return 0;
 		}
-		*irqs[irq_num].description = '\0';
+		*irq->description = '\0';
 
 		/* If it's not a numbered IRQ, then the description is simply everything that remains */
-		if (!isnumeric(irqs[irq_num].name)) {
-			strcpy(irqs[irq_num].description, pos);
+		if (!isnumeric(irq->name)) {
+			strcpy(irq->description, pos);
 			goto next_line;
 		}
 
@@ -218,7 +216,7 @@ size_t read_interrupts(irqstat_t irqs[], bool config)
 
 		/* If we only have one token, there's nothing left to parse */
 		if (!token_num) {
-			strcpy(irqs[irq_num].description, pos);
+			strcpy(irq->description, pos);
 			goto next_line;
 		}
 
@@ -230,8 +228,8 @@ size_t read_interrupts(irqstat_t irqs[], bool config)
 			/* TODO: 32-bit SPARC
 			 * SPARC has been seen to have many duplicate 'MSIQ' interrupts (one per thread), so always show the IRQ number here to differentiate */
 			if (!strcmp(tokens[2], "MSIQ")) {
-				irqs[irq_num].hwirq = strtoul(irqs[irq_num].name, NULL, 10);
-				irqs[irq_num].has_hwirq = true;
+				irq->hwirq = strtoul(irq->name, NULL, 10);
+				irq->has_hwirq = true;
 			}
 		}
 #else
@@ -249,8 +247,8 @@ size_t read_interrupts(irqstat_t irqs[], bool config)
 			 * 33:     617373  f1010140.gpio  17 Edge      pps.-1
 			 * Interrupt 33, for device(s): pps.-1 [17]
 			 */
-			if ((irqs[irq_num].hwirq = strtoul(tokens[1], NULL, 10)) != strtoul(irqs[irq_num].name, NULL, 10))
-				irqs[irq_num].has_hwirq = true;
+			if ((irq->hwirq = strtoul(tokens[1], NULL, 10)) != strtoul(irq->name, NULL, 10))
+				irq->has_hwirq = true;
 
 			/* MIPS has been seen to not show the type
 			 *
@@ -283,22 +281,25 @@ size_t read_interrupts(irqstat_t irqs[], bool config)
 			if (xisdigit(*tokens[1]) && (endswith(tokens[1], "-fasteoi") || endswith(tokens[1], "-edge"))) {
 				token_start = 2;
 
-				if ((irqs[irq_num].hwirq = strtoul(tokens[1], NULL, 10)) != strtoul(irqs[irq_num].name, NULL, 10))
-					irqs[irq_num].has_hwirq = true;
+				if ((irq->hwirq = strtoul(tokens[1], NULL, 10)) != strtoul(irq->name, NULL, 10))
+					irq->has_hwirq = true;
 			}
 		}
 
 		/* Concatenate the needed tokens with a space */
-		for (*irqs[irq_num].description = '\0'; token_start <= token_num; token_start++) {
-			strcat(irqs[irq_num].description, tokens[token_start]);
-			strcat(irqs[irq_num].description, " ");
+		for (*irq->description = '\0'; token_start <= token_num; token_start++) {
+			strcat(irq->description, tokens[token_start]);
+			strcat(irq->description, " ");
 		}
 
-		*(irqs[irq_num].description + strlen(irqs[irq_num].description) - 1) = '\0';
+		*(irq->description + strlen(irq->description) - 1) = '\0';
 
 next_line:
-			line_num++;
-			irq_num++;
+		line_num++;
+		irq_num++;
+
+		if (irq_num == MAX_IRQS)
+			break;
 	}
 
 	fclose(interrupts);
