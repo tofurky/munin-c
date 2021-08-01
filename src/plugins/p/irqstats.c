@@ -227,9 +227,14 @@ size_t read_interrupts(irqstat_t irqs[], bool config)
 		 *  1:          0     sun4u    -IVEC      SCHIZO_PCIERR
 		 * Interrupt 1, for device(s): SCHIZO_PCIERR [1]
 		 *
+		 * sun4u:
+		 *                     [0]    [1-]
+		 *  8:        191      sun4u  pata_cmd64x
+		 * Interrupt 8, for device(s): pata_cmd64x
+		 *
 		 * sun4v:
-		 *                    [0]      [1]
-		 * 42:          0     sun4v    MSIQ
+		 *                     [0]      [1-]
+		 * 42:          0      sun4v    MSIQ
 		 * Interrupt 42, for device(s): MSIQ [42]
 		 *
 		 * vsun4v:
@@ -269,7 +274,7 @@ size_t read_interrupts(irqstat_t irqs[], bool config)
 			/* MIPS has been seen to not show the type
 			 *
 			 * MIPS:
-			 *                     [0]   [1] [2-]
+			 *                     [0]    [1][2-]
 			 * 10:        122      MISC   3  ttyS0
 			 * Interrupt 10, for device(s): ttyS0 [3]
 			 */
@@ -309,7 +314,6 @@ size_t read_interrupts(irqstat_t irqs[], bool config)
 			strcat(irq->description, tokens[token_start]);
 			strcat(irq->description, " ");
 		}
-
 		*(irq->description + strlen(irq->description) - 1) = '\0';
 
 next_line:
@@ -334,11 +338,12 @@ bool irqstats_config() {
 		return false;
 	}
 
+	/* Text taken from munin.git/plugins/node.d.linux/irqstats.in */
 	printf("graph_title Individual interrupts\n"
 		"graph_args --base 1000 --logarithmic\n"
 		"graph_vlabel interrupts / ${graph_period}\n"
 		"graph_category system\n"
-		"graph_info Shows the number of different IRQs received by the kernel.  High disk or network traffic can cause a high number of interrupts (with good hardware and drivers this will be less so). Sudden high interrupt activity with no associated higher system activity is not normal.\n\n");
+		"graph_info Shows the number of different IRQs received by the kernel. High disk or network traffic can cause a high number of interrupts (with good hardware and drivers this will be less so). Sudden high interrupt activity with no associated higher system activity is not normal.\n\n");
 
 	printf("graph_order");
 	for (size_t i = 0; i < irq_num; i++)
@@ -357,7 +362,7 @@ bool irqstats_config() {
 			if (irqs[i].has_hwirq)
 				printf(" [%lu]", irqs[i].hwirq);
 			printf("\n");
-		/* NOTE: The original Perl plugin does a case insensitive substring match. '#define _GNU_SOURCE' and strcasestr() could imitate this. */
+		/* NOTE: The original Perl plugin does a case insensitive substring match. '#define _GNU_SOURCE' and strcasestr() could imitate this */
 		} else if (!strcmp(irqs[i].name, "NMI")) {
 			printf("iNMI.info Non-maskable interrupt. Either 0 or quite high. If it's normally 0 then just one NMI will often mark some hardware failure.\n");
 		} else if (!strcmp(irqs[i].name, "LOC")) {
