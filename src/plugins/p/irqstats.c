@@ -148,7 +148,7 @@ size_t read_interrupts(irqstat_t irqs[], bool config)
 			irq->name[length] = '\0';
 		}
 
-		/* Convert each counter value to long and add it to the total for this IRQ */
+		/* Convert each counter value to unsigned long and add it to the total for this IRQ */
 		for (size_t c = 0; c <= cpu_num; c++) {
 			pos = strtok(NULL, " ");
 			/* Some interrupts, such as 'ERR' or 'MIS' will only have a single counter rather than one per CPU */
