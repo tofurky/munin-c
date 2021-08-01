@@ -215,7 +215,7 @@ size_t read_interrupts(irqstat_t irqs[], bool config)
 
 		/* If we only have one token, there's nothing left to parse */
 		if (!token_num) {
-			strcpy(irq->description, pos);
+			strcpy(irq->description, tokens[0]);
 			goto next_line;
 		}
 
@@ -236,8 +236,6 @@ size_t read_interrupts(irqstat_t irqs[], bool config)
 		 *                              [0]        [1]        [2-]
 		 * 16:          0          0    vsun4v     -IVEC      MSIQ
 		 * Interrupt 16, for device(s): MSIQ [16]
-		 *
-		 * TODO: sun4[cdm]
 		 */
 		token_start = (token_num >= 2 && *tokens[1] == '-') ? 2 : 1;
 
