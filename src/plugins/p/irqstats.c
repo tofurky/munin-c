@@ -221,7 +221,7 @@ size_t read_interrupts(irqstat_t irqs[], bool config)
 
 		/* Add a pointer to the remainder of the string, if it exists */
 		if (pos && (pos + strlen(pos)) != eol)
-			tokens[++token_num] = pos = (char *) (pos + strlen(pos) + 1);
+			tokens[++token_num] = pos = pos + strlen(pos) + 1;
 
 #if defined(__sparc__)
 		/* SPARC's interrupts layout differs
