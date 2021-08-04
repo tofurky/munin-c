@@ -20,7 +20,7 @@
 #define MAX_IRQS 256
 /* Sufficient even on a system with 256 threads */
 #define MAX_LINE 4096
-#define MAX_TOKENS 32
+#define MAX_TOKENS 16
 
 typedef struct irqstat_t {
 	char *name;
@@ -86,7 +86,7 @@ size_t read_interrupts(irqstat_t irqs[], bool config)
 
 	while (fgets(line_buf, sizeof(line_buf), interrupts)) {
 		char *pos, *eol;
-		char *tokens[MAX_TOKENS];
+		char *tokens[MAX_TOKENS + 1];
 		size_t token_num = 0, token_start;
 		irqstat_t *irq = &irqs[irq_num];
 
@@ -124,7 +124,7 @@ size_t read_interrupts(irqstat_t irqs[], bool config)
 				return 0;
 			}
 
-			cpu_num--; /* Arrays start at 0 */
+			cpu_num--; /* CPU0 -> 0 */
 			line_num++;
 
 			continue;
@@ -208,16 +208,20 @@ size_t read_interrupts(irqstat_t irqs[], bool config)
 			goto next_line;
 		}
 
-		tokens[token_num] = pos = strtok(pos, " ");
-		while ((pos = strtok(NULL, " ")) != NULL && token_num < (MAX_TOKENS - 1)) {
+		/* Split the non-counter portion of the line into MAX_TOKENS words */
+		*tokens = strtok(pos, " ");
+		while (token_num < (MAX_TOKENS - 1) && (pos = strtok(NULL, " ")) != NULL)
 			tokens[++token_num] = pos;
-		}
 
 		/* If we only have one token, there's nothing left to parse */
 		if (!token_num) {
-			strcpy(irq->description, tokens[0]);
+			strcpy(irq->description, *tokens);
 			goto next_line;
 		}
+
+		/* Add a pointer to the remainder of the string, if it exists */
+		if (pos && (pos + strlen(pos)) != eol)
+			tokens[++token_num] = pos = (char *) (pos + strlen(pos) + 1);
 
 #if defined(__sparc__)
 		/* SPARC's interrupts layout differs
