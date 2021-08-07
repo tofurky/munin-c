@@ -35,10 +35,7 @@ int open_files(int argc, char **argv)
 			     "graph_category system\n"
 			     "graph_info This graph monitors the Linux open files table.\n"
 			     "used.label open files\n"
-			     "used.info The number of currently open files.\n"
-			     "max.label max open files\n"
-			     "max.info The maximum supported number of open "
-			     "files. Tune by modifying " FS_FILE_NR ".");
+			     "used.info The number of currently open files.");
 			printf("used.warning %lu\nused.critical %lu\n",
 			       (unsigned long) (avail * 0.92), (unsigned long) (avail * 0.98));
 			return 0;
@@ -53,6 +50,6 @@ int open_files(int argc, char **argv)
 		return fail("cannot read from " FS_FILE_NR);
 	}
 	fclose(f);
-	printf("used.value %lu\nmax.value %lu\n", alloc - freeh, avail);
+	printf("used.value %lu\n", alloc - freeh);
 	return 0;
 }
