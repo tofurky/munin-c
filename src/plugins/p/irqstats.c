@@ -374,13 +374,6 @@ bool irqstats_config()
 			if (irqs[i].has_hwirq)
 				printf(" [%lu]", irqs[i].hwirq);
 			printf("\n");
-		/* NOTE: The original Perl plugin does a case insensitive substring match. '#define _GNU_SOURCE' and strcasestr() could imitate this */
-		} else if (!strcmp(irqs[i].name, "NMI")) {
-			printf("iNMI.info Non-maskable interrupt. Either 0 or quite high. If it's normally 0 then just one NMI will often mark some hardware failure.\n");
-		} else if (!strcmp(irqs[i].name, "LOC")) {
-			printf("iLOC.info Local (per CPU core) APIC timer interrupt. Until 2.6.21 normally 250 or 1000 per second. On modern 'tickless' kernels it more or less reflects how busy the machine is.\n");
-		} else {
-			/* Don't show any info line */
 		}
 
 		printf("i%s.type DERIVE\n"
