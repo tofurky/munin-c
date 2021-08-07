@@ -136,6 +136,12 @@ size_t read_interrupts(irqstat_t irqs[], bool config)
 			return 0;
 		}
 
+#if defined(__aarch64__) || defined(__arm__)
+		/* Some ARM devices, such as Raspberry Pi, have a line beginning with 'FIQ:' that contains only a list of device names */
+		if (!strcmp(pos, "FIQ:"))
+			continue;
+#endif
+
 		{
 			size_t length = strlen(pos);
 			irq->name = malloc(length); /* We're discarding the ':' */
