@@ -130,12 +130,6 @@ size_t read_interrupts(irqstat_t irqs[], bool config)
 			continue;
 		}
 
-		/* The rest of the lines should each contain an interrupt name, value(s), and optional description */
-		if (!strchr(pos, ':')) {
-			fprintf(stderr, "irq '%s' is missing ':'\n", pos);
-			return 0;
-		}
-
 #if defined(__aarch64__) || defined(__arm__)
 		/* Some ARM devices, such as Raspberry Pi, have a line beginning with 'FIQ:' that contains only a list of device names */
 		if (!strcmp(pos, "FIQ:"))
@@ -144,6 +138,13 @@ size_t read_interrupts(irqstat_t irqs[], bool config)
 
 		{
 			size_t length = strlen(pos);
+
+			/* The rest of the lines should each contain an interrupt name, value(s), and optional description */
+			if (length < 2 || strchr(pos, ':') != (pos + length - 1)) {
+				fprintf(stderr, "irq '%s' is invalid\n", pos);
+				return 0;
+			}
+
 			irq->name = malloc(length); /* We're discarding the ':' */
 			if (!irq->name) {
 				perror("malloc");
