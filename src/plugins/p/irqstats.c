@@ -339,11 +339,13 @@ next_line:
 		continue;
 
 error:
-		/* Appease static analyzers */
+		/* Appease e.g. clang-analyzer and valgrind */
 		for (size_t i = 0; i <= irq_num; i++) {
 			free(irqs[i].name);
 			free(irqs[i].description);
 		}
+
+		fclose(interrupts);
 
 		return 0;
 	}
