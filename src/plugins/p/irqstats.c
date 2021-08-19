@@ -96,14 +96,14 @@ size_t read_interrupts(irqstat_t irqs[], bool config)
 		/* Otherwise we've overrun line_buf (or the last line doesn't have a newline - unlikely) */
 		} else {
 			fprintf(stderr, "line %zu had overflow\n", line_num);
-			return 0;
+			goto error;
 		}
 
 		pos = strtok(line_buf, " ");
 		/* There should be no empty lines */
 		if (!pos) {
 			fprintf(stderr, "line %zu is empty\n", line_num);
-			return 0;
+			goto error;
 		}
 
 		/* The first line has a column per CPU - count them */
@@ -111,7 +111,7 @@ size_t read_interrupts(irqstat_t irqs[], bool config)
 			while (pos) {
 				if (strncmp(pos, "CPU", 3)) {
 					fprintf(stderr, "expected CPU at line 0, got '%s'\n", pos);
-					return 0;
+					goto error;
 				}
 
 				cpu_num++;
@@ -121,7 +121,7 @@ size_t read_interrupts(irqstat_t irqs[], bool config)
 
 			if (!cpu_num) {
 				fprintf(stderr, "no CPUs found\n");
-				return 0;
+				goto error;
 			}
 
 			cpu_num--; /* CPU0 -> 0 */
@@ -144,13 +144,13 @@ size_t read_interrupts(irqstat_t irqs[], bool config)
 			/* The rest of the lines should each contain an interrupt name, value(s), and optional description */
 			if (length < 2 || strchr(pos, ':') != (pos + length - 1)) {
 				fprintf(stderr, "irq '%s' is invalid\n", pos);
-				return 0;
+				goto error;
 			}
 
 			irq->name = malloc(length); /* We're discarding the ':' */
 			if (!irq->name) {
 				perror("malloc");
-				return 0;
+				goto error;
 			}
 
 			strncpy(irq->name, pos, --length); /* Discard ':' */
@@ -164,7 +164,7 @@ size_t read_interrupts(irqstat_t irqs[], bool config)
 			if (!pos) {
 				if (!c) {
 					fprintf(stderr, "irq '%s' has no counters\n", irq->name);
-					return 0;
+					goto error;
 				}
 
 				break;
@@ -176,7 +176,7 @@ size_t read_interrupts(irqstat_t irqs[], bool config)
 
 				if (!c) {
 					fprintf(stderr, "irq '%s' has garbage '%s'\n", irq->name, pos);
-					return 0;
+					goto error;
 				}
 
 				/* Backtrack */
@@ -208,7 +208,7 @@ size_t read_interrupts(irqstat_t irqs[], bool config)
 		irq->description = malloc(strlen(pos) + 1);
 		if (!irq->description) {
 			perror("malloc");
-			return 0;
+			goto error;
 		}
 
 		/* If it's not a numbered IRQ, then the description is simply everything that remains */
@@ -335,6 +335,17 @@ next_line:
 
 		if (irq_num == MAX_IRQS)
 			break;
+
+		continue;
+
+error:
+		/* Appease static analyzers */
+		for (size_t i = 0; i <= irq_num; i++) {
+			free(irqs[i].name);
+			free(irqs[i].description);
+		}
+
+		return 0;
 	}
 
 	fclose(interrupts);
